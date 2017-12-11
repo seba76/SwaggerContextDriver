@@ -1,10 +1,7 @@
 ﻿using LINQPad.Extensibility.DataContext;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SwaggerContextDriver
 {
@@ -59,5 +56,23 @@ namespace SwaggerContextDriver
             bool? result = new ConnectionDialog(cxInfo).ShowDialog();
             return result == true;
         }
+
+        /// <summary>Returns the names & types of the parameter(s) that should be passed into your data
+        /// context's constructor. Typically this is a connection string or a DbConnection. The number
+        /// of parameters and their types need not be fixed - they may depend on custom flags in the
+        /// connection's DriverData. The default is no parameters.</summary>
+        public virtual ParameterDescriptor[] GetContextConstructorParameters(IConnectionInfo cxInfo)
+        {
+            return new ParameterDescriptor[] { new ParameterDescriptor("httpClient", "System.Net.Http.HttpClient") };
+        }
+
+        /// <summary>Returns the argument values to pass into your data context's constructor, based on
+        /// a given IConnectionInfo. This must be consistent with GetContextConstructorParameters.</summary>
+        public virtual object[] GetContextConstructorArguments(IConnectionInfo cxInfo)
+        {
+            var httpClient = new HttpClient();
+            return new[] { httpClient };
+        }
+
     }
 }

@@ -7,10 +7,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SwaggerContextDriver
 {
@@ -18,13 +15,60 @@ namespace SwaggerContextDriver
     {
         internal static List<ExplorerItem> GetSchemaAndBuildAssembly(string driverLocation, ConnectionProperties props, AssemblyName name, ref string nameSpace, ref string typeName)
         {
-            var document = SwaggerDocument.FromUrlAsync(props.Uri).Result;
+            List<ExplorerItem> schema = new List<ExplorerItem>();
 
-            // Compile the code into the assembly, using the assembly name provided:
-            BuildAssemblySingleClientFromOpId(document, driverLocation, name, nameSpace, ref typeName);
+            var uri = new Uri(props.Uri);
+            SwaggerDocument document = null;
+            if (uri.Scheme == "file")
+            {
+                document = SwaggerDocument.FromFileAsync(uri.LocalPath).Result;
+            }
+            else if (uri.Scheme == "http" || uri.Scheme == "https")
+            {
+                document = SwaggerDocument.FromUrlAsync(props.Uri).Result;
 
-            //// Use the schema to populate the Schema Explorer:
-            List<ExplorerItem> schema = GetSchemaSingleClient(document, typeName);
+                if (document.BaseUrl.StartsWith("/") && document.BasePath.StartsWith("/"))
+                {
+                    var t = document.BaseUrl;                    
+                    document.BasePath = uri.Scheme + "://" + uri.Host + ":" + uri.Port + document.BaseUrl;
+                    System.Diagnostics.Debug.WriteLine("Changing BaseUrl from '{0}' to '{1}'", t, document.BasePath);
+                }
+
+                if (string.IsNullOrEmpty(document.Host))
+                {
+                    document.Host = uri.Host;
+                    System.Diagnostics.Debug.WriteLine("Host was null, setting it to '{0}'", document.Host);
+                }
+            }
+
+            switch (props.GenOption)
+            {
+                case GeneratorType.SingleClientFromOperatinoId:
+
+                    // Compile the code into the assembly, using the assembly name provided:
+                    BuildAssemblySingleClientFromOpId(document, driverLocation, name, nameSpace, ref typeName, props);
+
+                    // Use the schema to populate the Schema Explorer:
+                    schema = GetSchemaSingleClient(document, typeName);
+                    break;
+                case GeneratorType.SingleClientFromPathSegment:
+
+                    // Compile the code into the assembly, using the assembly name provided:
+                    BuildAssemblySingleClientFromPathSegOp(document, driverLocation, name, nameSpace, ref typeName, props);
+
+                    // Use the schema to populate the Schema Explorer:
+                    //schema = GetSchemaSingleClientPath(document, typeName);
+                    schema = GetSchemaViaReflection(name, nameSpace, typeName);
+                    break;
+                case GeneratorType.MultipleClientsFromOperationId:
+
+                    // Compile the code into the assembly, using the assembly name provided:
+                    BuildAssemblyMultiClientFromOpId(document, driverLocation, name, nameSpace, ref typeName, props);
+
+                    // Use the schema to populate the Schema Explorer:
+                    schema = GetSchemaMultiClient(document, typeName);
+                    break;
+            }
 
             return schema;
         }
@@ -70,12 +114,50 @@ namespace SwaggerContextDriver
             return items;
         }
 
+        private static List<ExplorerItem> GetSchemaSingleClientPath(SwaggerDocument document, string typeName)
+        {
+            var items = new List<ExplorerItem>();
+            foreach (var op in document.Operations)
+            {
+                var ei = new ExplorerItem(FirstCharToUpper(op.Operation.OperationId.Replace(".get", "").Replace(".", "")) + "Async", ExplorerItemKind.Schema, ExplorerIcon.StoredProc);
+                ei.ToolTipText = op.Operation.Summary;
+                ei.DragText = FirstCharToUpper(op.Operation.OperationId) + "Async" + "()";
+
+                if (op.Operation.Parameters != null && op.Operation.Parameters.Count > 0)
+                {
+                    var para = new List<ExplorerItem>();
+                    foreach (var p in op.Operation.Parameters)
+                    {
+                        var name = p.Name;
+                        if (p.IsAnyType == false)
+                        {
+                            if (p.IsRequired)
+                            {
+                                name += string.Format("({0})", p.Type);
+                            }
+                            else
+                            {
+                                name += string.Format("({0}?)", p.Type);
+                            }
+                        }
+
+                        var t = new ExplorerItem(name, ExplorerItemKind.Parameter, ExplorerIcon.Parameter);
+                        t.ToolTipText = p.Description;
+                        para.Add(t);
+                    }
+
+                    if (para.Count > 0) ei.Children = para;
+                }
+
+                items.Add(ei);
+            }
+
+            return items;
+        }
+
         private static List<ExplorerItem> GetSchemaMultiClient(SwaggerDocument document, string typeName)
         {
             var items = new List<ExplorerItem>();
-            var root = new ExplorerItem("Api", ExplorerItemKind.CollectionLink, ExplorerIcon.Box);
-            root.Children = new List<ExplorerItem>();
-            items.Add(root);
             foreach (var op in document.Operations)
             {
                 var tok = op.Operation.OperationId.Split(new[] { '_' }, 2);
@@ -83,11 +165,11 @@ namespace SwaggerContextDriver
                 ei.ToolTipText = op.Operation.Summary;
                 if (tok.Length == 2)
                 {
-                    ei.DragText = "(new Api." + tok[0] + "Client())." + ei.Text + "()";
+                    ei.DragText = ei.Text + "()";
                 }
                 else
                 {
-                    ei.DragText = "(new Api.Client())." + ei.Text + "()";
+                    ei.DragText = ei.Text + "()";
                 }
 
                 if (op.Operation.Parameters != null && op.Operation.Parameters.Count > 0)
@@ -116,15 +198,79 @@ namespace SwaggerContextDriver
                     if (para.Count > 0) ei.Children = para;
                 }
 
-                root.Children.Add(ei);
+                items.Add(ei);
             }
 
             return items;
         }
 
-        private static void BuildAssemblyMultiClientFromOpId(SwaggerDocument document, string location, AssemblyName name, string nameSpace, ref string typeName)
+        private static List<ExplorerItem> GetSchemaViaReflection(AssemblyName assembly, string nameSpace, string typeName)
         {
-            typeName = "Api";
+            var items = new List<ExplorerItem>();
+
+            Assembly testAssembly = Assembly.LoadFile(assembly.CodeBase);
+
+            // get type of class Calculator from just loaded assembly
+            Type calcType = testAssembly.GetType(nameSpace + "." + typeName);
+
+            var methods = calcType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+            foreach (var op in methods)
+            {
+                if (op.IsSpecialName) continue;
+
+                var ei = new ExplorerItem(op.Name, ExplorerItemKind.Schema, ExplorerIcon.StoredProc);
+                ei.DragText = op.Name + "()";
+
+                var param = op.GetParameters();
+                if (param != null && param.Length > 0)
+                {
+                    var para = new List<ExplorerItem>();
+                    foreach (var p in param)
+                    {
+                        var name = p.Name;
+                        if (p.IsOptional)
+                        {
+                            name += string.Format("({0}?)", p.ParameterType.Name);
+                        }
+                        else
+                        {
+                            name += string.Format("({0})", p.ParameterType.Name);
+                        }
+
+                        var t = new ExplorerItem(name, ExplorerItemKind.Parameter, ExplorerIcon.Parameter);
+                        para.Add(t);
+                    }
+
+                    if (para.Count > 0) ei.Children = para;
+                }
+
+                items.Add(ei);
+            }
+
+            var pr = calcType.GetProperties();
+            foreach (var op in pr)
+            {
+                if (op.IsSpecialName) continue;
+
+                var name = op.Name;
+                if (op.CanRead && op.CanWrite) name += "{ get; set; }";
+                else if (op.CanRead) name += "{ get; }";
+                else if (op.CanWrite) name += "{ set; }";
+
+                var ei = new ExplorerItem(op.Name, ExplorerItemKind.Schema, ExplorerIcon.Table);
+                ei.DragText = op.Name;
+                ei.ToolTipText = name;
+
+                items.Add(ei);
+            }
+
+            return items;
+        }
+
+        private static void BuildAssemblyMultiClientFromOpId(SwaggerDocument document, string location, AssemblyName name, string nameSpace, ref string typeName, ConnectionProperties props)
+        {
+            typeName = "Client";
             var settings = new SwaggerToCSharpClientGeneratorSettings
             {
                 ClassName = "{controller}Client",
@@ -135,11 +281,43 @@ namespace SwaggerContextDriver
                 },
             };
 
+            if (props.InjectHttpClient)
+            {
+                settings.ClientBaseClass = "SwaggerContextDriverExtension.MyClient";
+                settings.UseHttpClientCreationMethod = true;
+                settings.DisposeHttpClient = props.DisposeHttpClient;
+            }
+
             var generator = new SwaggerToCSharpClientGenerator(document, settings);
 
-            var code = generator.GenerateFile();
-            code = code.Replace(nameSpace + "\n{", nameSpace + "\n{" + " public class " + typeName + "{ ");
-            code += " }";
+            var code = "";
+
+            if (props.InjectHttpClient)
+            {
+                code += @"
+namespace SwaggerContextDriverExtension
+{
+    public class MyClient
+    {
+        public System.Net.Http.HttpClient HttpClient { get; set; }
+
+        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            if (HttpClient == null)
+            {
+                HttpClient = new System.Net.Http.HttpClient();
+            }
+
+//            HttpClient = new System.Net.Http.HttpClient();
+            return HttpClient;
+        }
+    }
+}
+";
+            }
+
+            code += "\n\n";
+            code += generator.GenerateFile();
             CompilerResults results;
             var assemblyNames = new List<string>()
             {
@@ -163,70 +341,142 @@ namespace SwaggerContextDriver
             }
 
             if (results.Errors.Count > 0)
+            {
                 throw new Exception
                     ("Cannot compile typed context: " + results.Errors[0].ErrorText + " (line " + results.Errors[0].Line + ")");
-        }
-
-
-        private static void BuildAssemblySingleClientFromOpId(SwaggerDocument document, string location, AssemblyName name, string nameSpace, ref string typeName)
-        {
-            typeName = "Client";
-            var settings = new SwaggerToCSharpClientGeneratorSettings
-            {
-                ClassName = "{controller}Client",                
-                OperationNameGenerator = new SingleClientFromOperationIdOperationNameGenerator(),
-                CSharpGeneratorSettings =
-                {                    
-                    Namespace = nameSpace
-                },
-            };
-
-            var generator = new SwaggerToCSharpClientGenerator(document, settings);
-            
-            var code = generator.GenerateFile();
-            CompilerResults results;
-            var assemblyNames = new List<string>()
-            {
-                "System.dll",
-                "System.Core.dll",
-                "System.Xml.dll",
-                "System.Runtime.Serialization.dll",
-                "System.Net.Http.dll",
-                "System.ComponentModel.DataAnnotations.dll",
-            };
-
-            assemblyNames.Add(Path.Combine(location, "Newtonsoft.Json.dll"));
-
-            using (var codeProvider = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" } }))
-            {
-                var options = new CompilerParameters(
-                    assemblyNames.ToArray(),
-                    name.CodeBase,
-                    true);
-                results = codeProvider.CompileAssemblyFromSource(options, code);
             }
-
-            if (results.Errors.Count > 0)
-                throw new Exception
-                    ("Cannot compile typed context: " + results.Errors[0].ErrorText + " (line " + results.Errors[0].Line + ")");
         }
 
-        private static void BuildAssemblySingleClientFromPathSegOp(SwaggerDocument document, string location, AssemblyName name, string nameSpace, ref string typeName)
+        private static void BuildAssemblySingleClientFromOpId(SwaggerDocument document, string location, AssemblyName name, string nameSpace, ref string typeName, ConnectionProperties props)
         {
             typeName = "Client";
             var settings = new SwaggerToCSharpClientGeneratorSettings
             {
+                GenerateClientClasses = true,
+                GenerateOptionalParameters = true,
+
                 ClassName = "{controller}Client",
-                OperationNameGenerator = new SingleClientFromPathSegmentsOperationNameGenerator(),
+                OperationNameGenerator = new SingleClientFromOperationIdOperationNameGenerator(),
                 CSharpGeneratorSettings =
                 {
                     Namespace = nameSpace
                 },
             };
 
+            if (props.InjectHttpClient)
+            {
+                settings.DisposeHttpClient = false;
+                settings.ClientBaseClass = nameSpace + ".MyClient";
+                settings.UseHttpClientCreationMethod = true;
+                settings.DisposeHttpClient = props.DisposeHttpClient;
+            }
+
             var generator = new SwaggerToCSharpClientGenerator(document, settings);
 
             var code = generator.GenerateFile();
+
+            if (props.InjectHttpClient)
+            {
+                code += @"
+namespace " + nameSpace + @"
+{
+    public class MyClient
+    {
+        public System.Net.Http.HttpClient HttpClient { get; set; }
+
+        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            if (HttpClient == null)
+            {
+                HttpClient = new System.Net.Http.HttpClient();
+            }
+
+//            HttpClient = new System.Net.Http.HttpClient();
+            return HttpClient;
+        }
+    }
+}
+";
+            }
+
+            CompilerResults results;
+            var assemblyNames = new List<string>()
+            {
+                "System.dll",
+                "System.Core.dll",
+                "System.Xml.dll",
+                "System.Runtime.Serialization.dll",
+                "System.Net.Http.dll",
+                "System.ComponentModel.DataAnnotations.dll",
+            };
+
+            assemblyNames.Add(Path.Combine(location, "Newtonsoft.Json.dll"));
+
+            using (var codeProvider = new CSharpCodeProvider())
+            {
+                var options = new CompilerParameters(
+                    assemblyNames.ToArray(),
+                    name.CodeBase,
+                    true);
+                results = codeProvider.CompileAssemblyFromSource(options, code);
+            }
+
+            if (results.Errors.Count > 0)
+                throw new Exception
+                    ("Cannot compile typed context: " + results.Errors[0].ErrorText + " (line " + results.Errors[0].Line + ")");
+        }
+
+        private static void BuildAssemblySingleClientFromPathSegOp(SwaggerDocument document, string location, AssemblyName name, string nameSpace, ref string typeName, ConnectionProperties props)
+        {
+            typeName = "Client";
+            var settings = new SwaggerToCSharpClientGeneratorSettings
+            {
+                ClassName = "{controller}Client",
+
+                OperationNameGenerator = new SingleClientFromPathSegmentsOperationNameGenerator(),
+                GenerateOptionalParameters = true,
+                CSharpGeneratorSettings =
+                {
+                    Namespace = nameSpace
+                },
+            };
+
+            if (props.InjectHttpClient)
+            {
+                settings.DisposeHttpClient = false;
+                settings.ClientBaseClass = nameSpace + ".MyClient";
+                settings.UseHttpClientCreationMethod = true;
+                settings.DisposeHttpClient = props.DisposeHttpClient;
+            }
+
+            var generator = new SwaggerToCSharpClientGenerator(document, settings);
+
+            var code = generator.GenerateFile();
+
+            if (props.InjectHttpClient)
+            {
+                code += @"
+namespace " + nameSpace + @"
+{
+    public class MyClient
+    {
+        public System.Net.Http.HttpClient HttpClient { get; set; }
+
+        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            if (HttpClient == null)
+            {
+                HttpClient = new System.Net.Http.HttpClient();
+            }
+
+//            HttpClient = new System.Net.Http.HttpClient();
+            return HttpClient;
+        }
+    }
+}
+";
+            }
+
             CompilerResults results;
             var assemblyNames = new List<string>()
             {

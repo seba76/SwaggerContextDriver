@@ -1,15 +1,46 @@
 ﻿<Window x:Class="SwaggerContextDriver.ConnectionDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Swagger Data Services Connection"
+        xmlns:converters="clr-namespace:SwaggerContextDriver.Converters"
+        Title="Swagger Data Services Connection"
     SizeToContent="Height"
     Width="336" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <converters:EnumMatchToBooleanConverter x:Key="enumConverter" />
+    </Window.Resources>
     <StackPanel Margin="7">
         
         <Label Padding="0,0,0,3">Service URI:</Label>
         <TextBox Text="{Binding Uri}"/>
 
-        <GroupBox Header="Log on details" Margin="0,10,0,10">
+        <GroupBox Header="Generator Options" Margin="0,10,0,10">
+            <StackPanel Margin="5" IsEnabled="True">
+                <TextBlock Padding="0,0,0,3" TextWrapping="Wrap">If you get error generating with default option select one of the others to see if it helps.</TextBlock>
+                <RadioButton Content="SingleClientFromOperationId" 
+                             Margin="0,5,5,0" 
+                             IsChecked="{Binding Path=GenOption, Mode=TwoWay, 
+                                 Converter={StaticResource enumConverter},
+                                 ConverterParameter=SingleClientFromOperatinoId}" />
+                <RadioButton Content="SingleClientFromPathSegment" 
+                             Margin="0,5,5,0" 
+                             IsChecked="{Binding Path=GenOption, Mode=TwoWay, 
+                                 Converter={StaticResource enumConverter},
+                                 ConverterParameter=SingleClientFromPathSegment}"/>
+                <RadioButton Content="MultipleClientsFromOperationId" 
+                             Margin="0,5,5,0" 
+                             IsChecked="{Binding Path=GenOption, Mode=TwoWay, 
+                                 Converter={StaticResource enumConverter},
+                                 ConverterParameter=MultipleClientsFromOperationId}"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="HttpClient" Margin="0,10,0,10">
+            <StackPanel Margin="5" IsEnabled="True">
+                <CheckBox IsChecked="{Binding InjectHttpClient}"  ToolTip="Indicating whether an HttpClient instance is accessible via property and injected to generated client." >Inject HttpClient</CheckBox>
+                <CheckBox IsChecked="{Binding DisposeHttpClient}" ToolTip="Indicating whether to dispose the HttpClient" >Dispose HttpClient</CheckBox>
+            </StackPanel>
+        </GroupBox>
+        <!--<GroupBox Header="Log on details" Margin="0,10,0,10">
             <StackPanel Margin="5" IsEnabled="False">
                 <RadioButton Content="No Authentication" Margin="0,5,5,0" IsChecked="True" />
                 <RadioButton Content="Use Windows Credentials" Margin="0,5,5,0" />
@@ -32,8 +63,8 @@
                     <TextBox Text="{Binding Password}" Grid.Column="1" Grid.Row="2" Width="140"/>
                 </Grid>
             </StackPanel>
-        </GroupBox>
-        
+        </GroupBox>-->
+
         <CheckBox IsChecked="{Binding Persist}" IsEnabled="False">Remember this connection</CheckBox>
 
         <DockPanel LastChildFill="False" Margin="0,8,0,0">

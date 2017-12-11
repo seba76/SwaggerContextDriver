@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SwaggerContextDriver</RootNamespace>
     <AssemblyName>SwaggerContextDriver</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -31,8 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DotLiquid, Version=2.0.200.0, Culture=neutral, PublicKeyToken=82e46016ecf9f07c, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotLiquid.2.0.200\lib\net45\DotLiquid.dll</HintPath>
+    <Reference Include="DotLiquid, Version=2.0.254.0, Culture=neutral, PublicKeyToken=82e46016ecf9f07c, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotLiquid.2.0.254\lib\net45\DotLiquid.dll</HintPath>
     </Reference>
     <Reference Include="LINQPad">
       <HintPath>..\..\..\..\..\..\Program Files\LINQPad5\LINQPad.exe</HintPath>
@@ -40,23 +40,23 @@
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="NJsonSchema, Version=9.10.10.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
-      <HintPath>..\packages\NJsonSchema.9.10.10\lib\net45\NJsonSchema.dll</HintPath>
+    <Reference Include="NJsonSchema, Version=9.10.70.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
+      <HintPath>..\packages\NJsonSchema.9.10.70\lib\net45\NJsonSchema.dll</HintPath>
     </Reference>
-    <Reference Include="NJsonSchema.CodeGeneration, Version=9.10.10.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
-      <HintPath>..\packages\NJsonSchema.CodeGeneration.9.10.10\lib\net451\NJsonSchema.CodeGeneration.dll</HintPath>
+    <Reference Include="NJsonSchema.CodeGeneration, Version=9.10.70.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
+      <HintPath>..\packages\NJsonSchema.CodeGeneration.9.10.70\lib\net451\NJsonSchema.CodeGeneration.dll</HintPath>
     </Reference>
-    <Reference Include="NJsonSchema.CodeGeneration.CSharp, Version=9.10.10.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
-      <HintPath>..\packages\NJsonSchema.CodeGeneration.CSharp.9.10.10\lib\net451\NJsonSchema.CodeGeneration.CSharp.dll</HintPath>
+    <Reference Include="NJsonSchema.CodeGeneration.CSharp, Version=9.10.70.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
+      <HintPath>..\packages\NJsonSchema.CodeGeneration.CSharp.9.10.70\lib\net451\NJsonSchema.CodeGeneration.CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="NSwag.CodeGeneration, Version=11.12.10.0, Culture=neutral, PublicKeyToken=c2d88086e098d109, processorArchitecture=MSIL">
-      <HintPath>..\packages\NSwag.CodeGeneration.11.12.10\lib\net451\NSwag.CodeGeneration.dll</HintPath>
+    <Reference Include="NSwag.CodeGeneration, Version=11.18.7.0, Culture=neutral, PublicKeyToken=c2d88086e098d109, processorArchitecture=MSIL">
+      <HintPath>..\packages\NSwag.CodeGeneration.11.18.7\lib\net451\NSwag.CodeGeneration.dll</HintPath>
     </Reference>
-    <Reference Include="NSwag.CodeGeneration.CSharp, Version=11.12.10.0, Culture=neutral, PublicKeyToken=c2d88086e098d109, processorArchitecture=MSIL">
-      <HintPath>..\packages\NSwag.CodeGeneration.CSharp.11.12.10\lib\net451\NSwag.CodeGeneration.CSharp.dll</HintPath>
+    <Reference Include="NSwag.CodeGeneration.CSharp, Version=11.18.7.0, Culture=neutral, PublicKeyToken=c2d88086e098d109, processorArchitecture=MSIL">
+      <HintPath>..\packages\NSwag.CodeGeneration.CSharp.11.18.7\lib\net451\NSwag.CodeGeneration.CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="NSwag.Core, Version=11.12.10.0, Culture=neutral, PublicKeyToken=c2d88086e098d109, processorArchitecture=MSIL">
-      <HintPath>..\packages\NSwag.Core.11.12.10\lib\net45\NSwag.Core.dll</HintPath>
+    <Reference Include="NSwag.Core, Version=11.18.7.0, Culture=neutral, PublicKeyToken=c2d88086e098d109, processorArchitecture=MSIL">
+      <HintPath>..\packages\NSwag.Core.11.18.7\lib\net45\NSwag.Core.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -78,7 +78,9 @@
       <DependentUpon>ConnectionDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="ConnectionProperties.cs" />
+    <Compile Include="Converters\EnumMatchToBooleanConverter.cs" />
     <Compile Include="DynamicDriver.cs" />
+    <Compile Include="GeneratorType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SchemaBuilder.cs" />
   </ItemGroup>
@@ -100,6 +102,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

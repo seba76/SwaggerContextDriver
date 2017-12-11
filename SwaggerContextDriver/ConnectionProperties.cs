@@ -50,6 +50,37 @@ namespace SwaggerContextDriver
             set { _driverData.SetElementValue("Password", _cxInfo.Encrypt(value)); }
         }
 
+        public GeneratorType GenOption
+        {
+            get
+            {
+                var gt = _driverData.Element("GeneratorType");
+                var t = (GeneratorType)Enum.Parse(typeof(GeneratorType), gt != null ? gt.Value : GeneratorType.SingleClientFromOperatinoId.ToString());
+                return t;
+            }
+            set { _driverData.SetElementValue("GeneratorType", value.ToString()); }
+        }
+
+        public bool InjectHttpClient
+        {
+            get
+            {
+                var el = _driverData.Element("InjectHttpClient");
+                return bool.Parse( el == null ? "true" : el.Value);
+            }
+            set { _driverData.SetElementValue("InjectHttpClient", value); }
+        }
+
+        public bool DisposeHttpClient
+        {
+            get
+            {
+                var el = _driverData.Element("DisposeHttpClient");
+                return bool.Parse(el == null ? "true" : el.Value);
+            }
+            set { _driverData.SetElementValue("DisposeHttpClient", value); }
+        }
+
         public ICredentials GetCredentials()
         {
             if (!string.IsNullOrEmpty(Domain))
