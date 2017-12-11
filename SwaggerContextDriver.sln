@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27128.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwaggerContextDriver", "SwaggerContextDriver\SwaggerContextDriver.csproj", "{AAB026FD-4AFA-42F6-A2B7-EC86E4414CC0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AAB026FD-4AFA-42F6-A2B7-EC86E4414CC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAB026FD-4AFA-42F6-A2B7-EC86E4414CC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAB026FD-4AFA-42F6-A2B7-EC86E4414CC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAB026FD-4AFA-42F6-A2B7-EC86E4414CC0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0D162D28-4C43-419B-A7CE-674576B301B6}
+	EndGlobalSection
+EndGlobal
