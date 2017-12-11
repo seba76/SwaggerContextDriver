@@ -50,7 +50,11 @@ namespace SwaggerContextDriver
         public override bool ShowConnectionDialog(IConnectionInfo cxInfo, bool isNewConnection)
         {
             // Populate the default URI with a demo value:
-            if (isNewConnection) new ConnectionProperties(cxInfo).Uri = "http://petstore.swagger.io/v2/swagger.json";
+            if (isNewConnection) new ConnectionProperties(cxInfo)
+            {
+                Uri = "http://petstore.swagger.io/v2/swagger.json",
+                Persist = true
+            };
 
             bool? result = new ConnectionDialog(cxInfo).ShowDialog();
             return result == true;

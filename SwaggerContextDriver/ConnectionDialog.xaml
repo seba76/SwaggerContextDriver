@@ -10,7 +10,7 @@
         <TextBox Text="{Binding Uri}"/>
 
         <GroupBox Header="Log on details" Margin="0,10,0,10">
-            <StackPanel Margin="5">
+            <StackPanel Margin="5" IsEnabled="False">
                 <RadioButton Content="No Authentication" Margin="0,5,5,0" IsChecked="True" />
                 <RadioButton Content="Use Windows Credentials" Margin="0,5,5,0" />
                 <RadioButton Content="Simple Authentication" Margin="0,5,5,0" />
@@ -34,7 +34,7 @@
             </StackPanel>
         </GroupBox>
         
-        <CheckBox IsChecked="{Binding Persist}">Remember this connection</CheckBox>
+        <CheckBox IsChecked="{Binding Persist}" IsEnabled="False">Remember this connection</CheckBox>
 
         <DockPanel LastChildFill="False" Margin="0,8,0,0">
             <Button Name="btnCancel" DockPanel.Dock="Right" Content="Cancel" Margin="5,0,0,0" Padding="8,3" MinWidth="60" IsCancel="True" TabIndex="2" />

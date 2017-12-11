@@ -17,7 +17,7 @@ namespace SwaggerContextDriver
         public ConnectionProperties(IConnectionInfo cxInfo)
         {
             _cxInfo = cxInfo;
-            _driverData = cxInfo.DriverData;
+            _driverData = cxInfo.DriverData;            
         }
 
         public bool Persist
