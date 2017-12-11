@@ -2,7 +2,7 @@
 SwaggerContextDriver is LINQPad data context dynamic driver for querying Swagger/OpenAPI REST service.
 
 # Download
-Lastest build can be found in releases.
+Lastest build can be found in [releases](https://github.com/seba76/SwaggerContextDriver/releases).
 
 # Prerequisites
 - LINQPad 5
