@@ -7,7 +7,12 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Security.Principal;
+using System.Threading;
+using NJsonSchema.Infrastructure;
 
 namespace SwaggerContextDriver
 {
@@ -25,7 +30,45 @@ namespace SwaggerContextDriver
             }
             else if (uri.Scheme == "http" || uri.Scheme == "https")
             {
-                document = SwaggerDocument.FromUrlAsync(props.Uri).Result;
+                if (props.AuthOption == AuthenticationType.None)
+                    document = SwaggerDocument.FromUrlAsync(props.Uri).Result;
+                else if (props.AuthOption == AuthenticationType.Basic)
+                {
+                    var client = new WebClient();
+                    client.Credentials = new NetworkCredential(props.UserName, props.Password, props.Domain);
+
+                    document = SwaggerDocument.FromJsonAsync(client.DownloadString(uri)).Result;
+                }
+                else if (props.AuthOption == AuthenticationType.CurrentUser)
+                {
+                    var wi = WindowsIdentity.GetCurrent();
+                    var wic = wi.Impersonate();
+                    try
+                    {
+                        using (var client = new WebClient ())
+                        {
+                            var credentialsCache = new CredentialCache { { uri, "NTLM", CredentialCache.DefaultNetworkCredentials } };
+                            client.Credentials = credentialsCache;
+                            using (System.Threading.ExecutionContext.SuppressFlow())
+                            {
+                                var swaggerDefinition = client.DownloadString(uri);
+                                document = SwaggerDocument.FromJsonAsync(swaggerDefinition).Result;
+                            }
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        // handle exception
+                    }
+                    finally
+                    {
+                        wic.Undo();
+                    }
+                }
+                else
+                {
+                    throw new NotSupportedException("Authentication method not supported.");
+                }
 
                 if (document.BaseUrl.StartsWith("/") && document.BasePath.StartsWith("/"))
                 {

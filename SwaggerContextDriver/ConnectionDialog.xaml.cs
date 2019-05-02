@@ -1,5 +1,6 @@
 ﻿using LINQPad.Extensibility.DataContext;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace SwaggerContextDriver
 {
@@ -19,7 +20,10 @@ namespace SwaggerContextDriver
 
 		void btnOK_Click (object sender, RoutedEventArgs e)
 		{
-			DialogResult = true;
+		    var password = (string)((PasswordBox)((Button)sender).Tag).Password;
+		    _properties.Password = password;
+
+            DialogResult = true;
 		}
 	}
 }
