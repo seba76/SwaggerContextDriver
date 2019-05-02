@@ -8,16 +8,26 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
-using System.Security.Principal;
 using System.Threading;
-using NJsonSchema.Infrastructure;
 
 namespace SwaggerContextDriver
 {
     class SchemaBuilder
     {
+        internal static SwaggerDocument DownloadDefinition(string uri, ConnectionProperties props, ICredentials credentials = null)
+        {
+            var client = new WebClient();
+
+            if (credentials != null) client.Credentials = credentials;
+
+            using (ExecutionContext.SuppressFlow())
+            {
+                var swaggerDefinition = client.DownloadString(uri);
+                return SwaggerDocument.FromJsonAsync(swaggerDefinition).Result;
+            }
+        }
+
         internal static List<ExplorerItem> GetSchemaAndBuildAssembly(string driverLocation, ConnectionProperties props, AssemblyName name, ref string nameSpace, ref string typeName)
         {
             List<ExplorerItem> schema = new List<ExplorerItem>();
@@ -31,44 +41,13 @@ namespace SwaggerContextDriver
             else if (uri.Scheme == "http" || uri.Scheme == "https")
             {
                 if (props.AuthOption == AuthenticationType.None)
-                    document = SwaggerDocument.FromUrlAsync(props.Uri).Result;
+                    document = DownloadDefinition(props.Uri, props);
                 else if (props.AuthOption == AuthenticationType.Basic)
-                {
-                    var client = new WebClient();
-                    client.Credentials = new NetworkCredential(props.UserName, props.Password, props.Domain);
-
-                    document = SwaggerDocument.FromJsonAsync(client.DownloadString(uri)).Result;
-                }
+                    document = DownloadDefinition(props.Uri, props, new NetworkCredential(props.UserName, props.Password, props.Domain));
                 else if (props.AuthOption == AuthenticationType.CurrentUser)
-                {
-                    var wi = WindowsIdentity.GetCurrent();
-                    var wic = wi.Impersonate();
-                    try
-                    {
-                        using (var client = new WebClient ())
-                        {
-                            var credentialsCache = new CredentialCache { { uri, "NTLM", CredentialCache.DefaultNetworkCredentials } };
-                            client.Credentials = credentialsCache;
-                            using (System.Threading.ExecutionContext.SuppressFlow())
-                            {
-                                var swaggerDefinition = client.DownloadString(uri);
-                                document = SwaggerDocument.FromJsonAsync(swaggerDefinition).Result;
-                            }
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        // handle exception
-                    }
-                    finally
-                    {
-                        wic.Undo();
-                    }
-                }
+                    document = DownloadDefinition(props.Uri, props, CredentialCache.DefaultNetworkCredentials);
                 else
-                {
                     throw new NotSupportedException("Authentication method not supported.");
-                }
 
                 if (document.BaseUrl.StartsWith("/") && document.BasePath.StartsWith("/"))
                 {
