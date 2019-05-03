@@ -87,7 +87,7 @@ namespace SwaggerContextDriver
             get
             {
                 var el = _driverData.Element("DisposeHttpClient");
-                return bool.Parse(el == null ? "true" : el.Value);
+                return bool.Parse(el == null ? "false" : el.Value);
             }
             set { _driverData.SetElementValue("DisposeHttpClient", value); }
         }
