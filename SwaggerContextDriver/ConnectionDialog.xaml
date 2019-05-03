@@ -40,7 +40,7 @@
                 <CheckBox IsChecked="{Binding DisposeHttpClient}" ToolTip="Indicating whether to dispose the HttpClient" >Dispose HttpClient</CheckBox>
             </StackPanel>
         </GroupBox>
-        <GroupBox Header="Log on details" Margin="0,10,0,10">
+        <GroupBox Header="Log on details" Margin="0,10,0,10" IsEnabled="{Binding InjectHttpClient}" ToolTip="Only available when the HttpClient is injected.">
             <StackPanel Margin="5">
                 <RadioButton Content="No Authentication" Margin="0,5,5,0"
                              IsChecked="{Binding Path=AuthOption, Mode=TwoWay, Converter={StaticResource enumConverter}, ConverterParameter=None}"/>

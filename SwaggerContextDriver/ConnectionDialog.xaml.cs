@@ -21,7 +21,12 @@ namespace SwaggerContextDriver
 		void btnOK_Click (object sender, RoutedEventArgs e)
 		{
 		    var password = (string)((PasswordBox)((Button)sender).Tag).Password;
-		    _properties.Password = password;
+
+            // Only update the password if it was specified for a basic auth type
+		    if (_properties.AuthOption == AuthenticationType.Basic)
+		    {
+		        _properties.Password = password;
+		    }
 
             DialogResult = true;
 		}
