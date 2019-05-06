@@ -61,6 +61,17 @@ namespace SwaggerContextDriver
             set { _driverData.SetElementValue("GeneratorType", value.ToString()); }
         }
 
+        public AuthenticationType AuthOption
+        {
+            get
+            {
+                var gt = _driverData.Element("AuthenticationType");
+                var t = (AuthenticationType)Enum.Parse(typeof(AuthenticationType), gt != null ? gt.Value : AuthenticationType.None.ToString());
+                return t;
+            }
+            set { _driverData.SetElementValue("AuthenticationType", value.ToString()); }
+        }        
+
         public bool InjectHttpClient
         {
             get
@@ -76,7 +87,7 @@ namespace SwaggerContextDriver
             get
             {
                 var el = _driverData.Element("DisposeHttpClient");
-                return bool.Parse(el == null ? "true" : el.Value);
+                return bool.Parse(el == null ? "false" : el.Value);
             }
             set { _driverData.SetElementValue("DisposeHttpClient", value); }
         }

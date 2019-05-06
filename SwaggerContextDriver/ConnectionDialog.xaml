@@ -11,65 +11,70 @@
     <StackPanel Margin="7">
         
         <Label Padding="0,0,0,3">Service URI:</Label>
-        <TextBox Text="{Binding Uri}"/>
+        <TextBox Text="{Binding Uri}" Padding="2"/>
 
-        <GroupBox Header="Generator Options" Margin="0,10,0,10">
+        <GroupBox Header="Generator Options" Margin="5">
             <StackPanel Margin="5" IsEnabled="True">
-                <TextBlock Padding="0,0,0,3" TextWrapping="Wrap">If you get error generating with default option select one of the others to see if it helps.</TextBlock>
+                <TextBlock Padding="2" TextWrapping="Wrap">If you get error generating with default option select one of the others to see if it helps.</TextBlock>
                 <RadioButton Content="SingleClientFromOperationId" 
-                             Margin="0,5,5,0" 
+                             Margin="5" 
                              IsChecked="{Binding Path=GenOption, Mode=TwoWay, 
                                  Converter={StaticResource enumConverter},
                                  ConverterParameter=SingleClientFromOperatinoId}" />
                 <RadioButton Content="SingleClientFromPathSegment" 
-                             Margin="0,5,5,0" 
+                             Margin="5" 
                              IsChecked="{Binding Path=GenOption, Mode=TwoWay, 
                                  Converter={StaticResource enumConverter},
                                  ConverterParameter=SingleClientFromPathSegment}"/>
                 <RadioButton Content="MultipleClientsFromOperationId" 
-                             Margin="0,5,5,0" 
+                             Margin="5" 
                              IsChecked="{Binding Path=GenOption, Mode=TwoWay, 
                                  Converter={StaticResource enumConverter},
                                  ConverterParameter=MultipleClientsFromOperationId}"/>
             </StackPanel>
         </GroupBox>
 
-        <GroupBox Header="HttpClient" Margin="0,10,0,10">
+        <GroupBox Header="HttpClient" Margin="5">
             <StackPanel Margin="5" IsEnabled="True">
-                <CheckBox IsChecked="{Binding InjectHttpClient}"  ToolTip="Indicating whether an HttpClient instance is accessible via property and injected to generated client." >Inject HttpClient</CheckBox>
-                <CheckBox IsChecked="{Binding DisposeHttpClient}" ToolTip="Indicating whether to dispose the HttpClient" >Dispose HttpClient</CheckBox>
+                <CheckBox IsChecked="{Binding InjectHttpClient}"  ToolTip="Indicating whether an HttpClient instance is accessible via property and injected to generated client." Margin="5">Inject HttpClient</CheckBox>
+                <CheckBox IsChecked="{Binding DisposeHttpClient}" ToolTip="Indicating whether to dispose the HttpClient" Margin="5" >Dispose HttpClient</CheckBox>
             </StackPanel>
         </GroupBox>
-        <!--<GroupBox Header="Log on details" Margin="0,10,0,10">
-            <StackPanel Margin="5" IsEnabled="False">
-                <RadioButton Content="No Authentication" Margin="0,5,5,0" IsChecked="True" />
-                <RadioButton Content="Use Windows Credentials" Margin="0,5,5,0" />
-                <RadioButton Content="Simple Authentication" Margin="0,5,5,0" />
-                <Grid Margin="15,5,0,0" HorizontalAlignment="Left">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-                    <Label Grid.Column="0" Grid.Row="0" Padding="3,1" VerticalAlignment="Center">User Name</Label>
-                    <Label Grid.Column="0" Grid.Row="1" Padding="3,1" VerticalAlignment="Center">Password</Label>
-                    <Label Grid.Column="0" Grid.Row="2" Padding="3,1" VerticalAlignment="Center">Domain (optional)</Label>
-                    <TextBox Text="{Binding Domain}" Grid.Column="1" Grid.Row="0" Width="140"/>
-                    <TextBox Text="{Binding UserName}" Grid.Column="1" Grid.Row="1" Width="140"/>
-                    <TextBox Text="{Binding Password}" Grid.Column="1" Grid.Row="2" Width="140"/>
-                </Grid>
+        <GroupBox Header="Log on details" Margin="5" IsEnabled="{Binding InjectHttpClient}" ToolTip="Only available when the HttpClient is injected.">
+            <StackPanel Margin="5">
+                <RadioButton Content="No Authentication" Margin="5"
+                             IsChecked="{Binding Path=AuthOption, Mode=TwoWay, Converter={StaticResource enumConverter}, ConverterParameter=None}"/>
+                <RadioButton Content="Use Windows Credentials" Margin="5"
+                             IsChecked="{Binding Path=AuthOption, Mode=TwoWay, Converter={StaticResource enumConverter}, ConverterParameter=CurrentUser}"/>
+                <RadioButton Content="Simple Authentication" Margin="5" 
+                             IsChecked="{Binding Path=AuthOption, Mode=TwoWay, Converter={StaticResource enumConverter}, ConverterParameter=Basic}"/>
+                <DockPanel HorizontalAlignment="Stretch">
+                    <Grid Margin="15,5,0,0" HorizontalAlignment="Center" IsEnabled="{Binding Path=AuthOption, Converter={StaticResource enumConverter}, ConverterParameter=Basic}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Padding="3,1" VerticalAlignment="Center">User Name</Label>
+                        <Label Grid.Column="0" Grid.Row="1" Padding="3,1" VerticalAlignment="Center">Password</Label>
+                        <Label Grid.Column="0" Grid.Row="2" Padding="3,1" VerticalAlignment="Center">Domain (optional)</Label>
+                        <TextBox Text="{Binding UserName}" Grid.Column="1" Grid.Row="0" MinWidth="140" Margin="5" Padding="2"/>
+                        <PasswordBox Name="InputPassword" Grid.Column="1" Grid.Row="1" MinWidth="140" Margin="5" Padding="2"/>
+                        <TextBox Text="{Binding Domain}" Grid.Column="1" Grid.Row="2" MinWidth="140" Margin="5" Padding="2"/>
+                    </Grid>
+                </DockPanel>
             </StackPanel>
-        </GroupBox>-->
+        </GroupBox>
 
         <CheckBox IsChecked="{Binding Persist}" IsEnabled="False">Remember this connection</CheckBox>
 
-        <DockPanel LastChildFill="False" Margin="0,8,0,0">
-            <Button Name="btnCancel" DockPanel.Dock="Right" Content="Cancel" Margin="5,0,0,0" Padding="8,3" MinWidth="60" IsCancel="True" TabIndex="2" />
-            <Button Name="btnOK" DockPanel.Dock="Right" Content="OK" Margin="5,0,0,0" Padding="8,3" MinWidth="60" IsDefault="True" TabIndex="1" Click="btnOK_Click" />
+        <DockPanel LastChildFill="False" Margin="5">
+            <Button Name="btnCancel" DockPanel.Dock="Right" Content="Cancel" Margin="5" Padding="5" MinWidth="60" IsCancel="True" TabIndex="2" />
+            <Button Name="btnOK" DockPanel.Dock="Right" Content="OK" Margin="5" Padding="5" MinWidth="60" IsDefault="True" TabIndex="1" Click="btnOK_Click" Tag="{Binding ElementName=InputPassword}" />
         </DockPanel>
 
     </StackPanel>    

@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,7 +37,7 @@
       <HintPath>..\packages\DotLiquid.2.0.254\lib\net45\DotLiquid.dll</HintPath>
     </Reference>
     <Reference Include="LINQPad">
-      <HintPath>..\..\..\..\..\..\Program Files\LINQPad5\LINQPad.exe</HintPath>
+      <HintPath>..\..\..\Program Files (x86)\LINQPad5\LINQPad.exe</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -80,6 +82,7 @@
     <Compile Include="ConnectionProperties.cs" />
     <Compile Include="Converters\EnumMatchToBooleanConverter.cs" />
     <Compile Include="DynamicDriver.cs" />
+    <Compile Include="AuthenticationType.cs" />
     <Compile Include="GeneratorType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SchemaBuilder.cs" />
@@ -114,4 +117,34 @@ xcopy /i/y *.png "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerCont
 
 </PostBuildEvent>
   </PropertyGroup>
+  <Import Project="..\packages\MSBuild.Extension.Pack.1.9.1\build\net40\MSBuild.Extension.Pack.targets" Condition="Exists('..\packages\MSBuild.Extension.Pack.1.9.1\build\net40\MSBuild.Extension.Pack.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\MSBuild.Extension.Pack.1.9.1\build\net40\MSBuild.Extension.Pack.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.Extension.Pack.1.9.1\build\net40\MSBuild.Extension.Pack.targets'))" />
+  </Target>
+  <Target Name="CreateLinqpadLPX" AfterTargets="PostBuildEvent">
+    <PropertyGroup>
+      <SourceDirectory>$(OutputPath)</SourceDirectory>
+    </PropertyGroup>
+    <!-- Create the output folder -->
+    <ItemGroup>
+      <OutputDirectory Include="$(OutputPath)" />
+    </ItemGroup>
+    <MakeDir Directories="@(OutputDirectory)" />
+    <PropertyGroup>
+      <WorkingDir>%(OutputDirectory.Fullpath)</WorkingDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <Files Include="$(SourceDirectory)*" Exclude="$(SourceDirectory)*Linqpad.exe*;$(SourceDirectory)*Newtonsoft.Json.xml;$(SourceDirectory)*NJsonSchema*.xml;$(SourceDirectory)*NSwag*.xml;$(SourceDirectory)*DotLiquid.xml">
+        <Group>Common</Group>
+      </Files>
+      <Files Include="$(SourceDirectory)it\*" Exclude="">
+        <Group>ItFiles</Group>
+      </Files>
+    </ItemGroup>
+    <!-- Zip files based on the group they belong to -->
+    <MSBuild.ExtensionPack.Compression.Zip RemoveRoot="$(SourceDirectory)" TaskAction="Create" CompressFiles="@(Files)" ZipFileName="$(WorkingDir)..\..\SwaggerContextDriver.lpx" />
+  </Target>
 </Project>

@@ -7,12 +7,27 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Reflection;
+using System.Threading;
 
 namespace SwaggerContextDriver
 {
     class SchemaBuilder
     {
+        internal static SwaggerDocument DownloadDefinition(string uri, ConnectionProperties props, ICredentials credentials = null)
+        {
+            var client = new WebClient();
+
+            if (credentials != null) client.Credentials = credentials;
+
+            using (ExecutionContext.SuppressFlow())
+            {
+                var swaggerDefinition = client.DownloadString(uri);
+                return SwaggerDocument.FromJsonAsync(swaggerDefinition).Result;
+            }
+        }
+
         internal static List<ExplorerItem> GetSchemaAndBuildAssembly(string driverLocation, ConnectionProperties props, AssemblyName name, ref string nameSpace, ref string typeName)
         {
             List<ExplorerItem> schema = new List<ExplorerItem>();
@@ -25,7 +40,14 @@ namespace SwaggerContextDriver
             }
             else if (uri.Scheme == "http" || uri.Scheme == "https")
             {
-                document = SwaggerDocument.FromUrlAsync(props.Uri).Result;
+                if (props.AuthOption == AuthenticationType.None)
+                    document = DownloadDefinition(props.Uri, props);
+                else if (props.AuthOption == AuthenticationType.Basic)
+                    document = DownloadDefinition(props.Uri, props, new NetworkCredential(props.UserName, props.Password, props.Domain));
+                else if (props.AuthOption == AuthenticationType.CurrentUser)
+                    document = DownloadDefinition(props.Uri, props, CredentialCache.DefaultNetworkCredentials);
+                else
+                    throw new NotSupportedException("Authentication method not supported.");
 
                 if (document.BaseUrl.StartsWith("/") && document.BasePath.StartsWith("/"))
                 {
@@ -292,29 +314,7 @@ namespace SwaggerContextDriver
 
             var code = "";
 
-            if (props.InjectHttpClient)
-            {
-                code += @"
-namespace SwaggerContextDriverExtension
-{
-    public class MyClient
-    {
-        public System.Net.Http.HttpClient HttpClient { get; set; }
-
-        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
-        {
-            if (HttpClient == null)
-            {
-                HttpClient = new System.Net.Http.HttpClient();
-            }
-
-//            HttpClient = new System.Net.Http.HttpClient();
-            return HttpClient;
-        }
-    }
-}
-";
-            }
+            code = AddHttpClientInjectCode(code, props, "SwaggerContextDriverExtension");
 
             code += "\n\n";
             code += generator.GenerateFile();
@@ -324,8 +324,10 @@ namespace SwaggerContextDriverExtension
                 "System.dll",
                 "System.Core.dll",
                 "System.Xml.dll",
+                "System.Xml.Linq.dll",
                 "System.Runtime.Serialization.dll",
                 "System.Net.Http.dll",
+                "LINQPad.exe",
                 "System.ComponentModel.DataAnnotations.dll",
             };
 
@@ -375,29 +377,7 @@ namespace SwaggerContextDriverExtension
 
             var code = generator.GenerateFile();
 
-            if (props.InjectHttpClient)
-            {
-                code += @"
-namespace " + nameSpace + @"
-{
-    public class MyClient
-    {
-        public System.Net.Http.HttpClient HttpClient { get; set; }
-
-        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
-        {
-            if (HttpClient == null)
-            {
-                HttpClient = new System.Net.Http.HttpClient();
-            }
-
-//            HttpClient = new System.Net.Http.HttpClient();
-            return HttpClient;
-        }
-    }
-}
-";
-            }
+            code = AddHttpClientInjectCode(code, props, nameSpace);
 
             CompilerResults results;
             var assemblyNames = new List<string>()
@@ -405,8 +385,10 @@ namespace " + nameSpace + @"
                 "System.dll",
                 "System.Core.dll",
                 "System.Xml.dll",
+                "System.Xml.Linq.dll",
                 "System.Runtime.Serialization.dll",
                 "System.Net.Http.dll",
+                "LINQPad.exe",
                 "System.ComponentModel.DataAnnotations.dll",
             };
 
@@ -453,29 +435,7 @@ namespace " + nameSpace + @"
 
             var code = generator.GenerateFile();
 
-            if (props.InjectHttpClient)
-            {
-                code += @"
-namespace " + nameSpace + @"
-{
-    public class MyClient
-    {
-        public System.Net.Http.HttpClient HttpClient { get; set; }
-
-        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
-        {
-            if (HttpClient == null)
-            {
-                HttpClient = new System.Net.Http.HttpClient();
-            }
-
-//            HttpClient = new System.Net.Http.HttpClient();
-            return HttpClient;
-        }
-    }
-}
-";
-            }
+            code = AddHttpClientInjectCode(code, props, nameSpace);
 
             CompilerResults results;
             var assemblyNames = new List<string>()
@@ -483,8 +443,10 @@ namespace " + nameSpace + @"
                 "System.dll",
                 "System.Core.dll",
                 "System.Xml.dll",
+                "System.Xml.Linq.dll",
                 "System.Runtime.Serialization.dll",
                 "System.Net.Http.dll",
+                "LINQPad.exe",
                 "System.ComponentModel.DataAnnotations.dll",
             };
 
@@ -502,6 +464,52 @@ namespace " + nameSpace + @"
             if (results.Errors.Count > 0)
                 throw new Exception
                     ("Cannot compile typed context: " + results.Errors[0].ErrorText + " (line " + results.Errors[0].Line + ")");
+        }
+
+        private static string AddHttpClientInjectCode(string code, ConnectionProperties props, string nameSpace)
+        {
+            if (props.InjectHttpClient)
+            {
+                code += @"
+namespace " + nameSpace + @"
+{
+    public class MyClient
+    {
+        public LINQPad.Extensibility.DataContext.IConnectionInfo driverConnectionInfo { get; set; }
+
+        public System.Net.Http.HttpClient HttpClient { get; set; }
+
+        public async System.Threading.Tasks.Task<System.Net.Http.HttpClient> CreateHttpClientAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            if (HttpClient == null)
+            {
+                var httpClientHandler = new System.Net.Http.HttpClientHandler();
+                var driverData = driverConnectionInfo.DriverData;
+                var authType = (string)driverData.Element(""AuthenticationType"");
+                var userName = (string)driverData.Element(""UserName"");
+                var password = (string)driverData.Element(""Password"");
+                var domain = (string)driverData.Element(""Domain"");
+
+                if (authType == ""None"")
+                    httpClientHandler.Credentials = null;
+                else if (authType == ""Basic"")
+                    httpClientHandler.Credentials = new System.Net.NetworkCredential(userName, password, domain);
+                else if (authType == ""CurrentUser"")
+                    httpClientHandler.Credentials = System.Net.CredentialCache.DefaultNetworkCredentials;
+                else
+                    throw new System.NotSupportedException(""Authentication method specified in the Connection Dialog is not supported."");
+
+                HttpClient = new System.Net.Http.HttpClient(httpClientHandler);
+            }
+
+            return HttpClient;
+        }
+    }
+}
+";
+            }
+
+            return code;
         }
 
         private static string FirstCharToUpper(string text)
