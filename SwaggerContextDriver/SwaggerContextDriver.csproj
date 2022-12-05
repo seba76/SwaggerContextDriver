@@ -110,10 +110,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /i/y header.xml "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
-xcopy /i/y *.dll "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
-xcopy /i/y *.pdb "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
-xcopy /i/y *.png "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
+    <PostBuildEvent>xcopy /i /y header.xml "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
+xcopy /i /y *.dll "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
+xcopy /i /y *.pdb "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
+xcopy /i /y *.png "%25localappdata%25\LINQPad\Drivers\DataContext\4.6\SwaggerContextDriver (no-strong-name)\"
 
 </PostBuildEvent>
   </PropertyGroup>

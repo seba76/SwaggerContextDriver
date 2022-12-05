@@ -490,14 +490,14 @@ namespace " + nameSpace + @"
                 var password = (string)driverData.Element(""Password"");
                 var domain = (string)driverData.Element(""Domain"");
 
-                if (authType == ""None"")
+                if (authType == ""None"" || string.IsNullOrEmpty(authType))
                     httpClientHandler.Credentials = null;
                 else if (authType == ""Basic"")
                     httpClientHandler.Credentials = new System.Net.NetworkCredential(userName, password, domain);
                 else if (authType == ""CurrentUser"")
                     httpClientHandler.Credentials = System.Net.CredentialCache.DefaultNetworkCredentials;
                 else
-                    throw new System.NotSupportedException(""Authentication method specified in the Connection Dialog is not supported."");
+                    throw new System.NotSupportedException(string.Format(""Authentication method '{0}' specified in the Connection Dialog is not supported."", authType));
 
                 HttpClient = new System.Net.Http.HttpClient(httpClientHandler);
             }

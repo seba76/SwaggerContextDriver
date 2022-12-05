@@ -65,9 +65,11 @@ namespace SwaggerContextDriver
         {
             get
             {
+                AuthenticationType at = AuthenticationType.None;
                 var gt = _driverData.Element("AuthenticationType");
-                var t = (AuthenticationType)Enum.Parse(typeof(AuthenticationType), gt != null ? gt.Value : AuthenticationType.None.ToString());
-                return t;
+                var val = gt != null && string.IsNullOrEmpty(gt.Value) == false ? gt.Value : AuthenticationType.None.ToString();
+                if (Enum.TryParse<AuthenticationType>(val, out at) == false) return AuthenticationType.None;                
+                return at;
             }
             set { _driverData.SetElementValue("AuthenticationType", value.ToString()); }
         }        
